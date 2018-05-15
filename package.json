@@ -1,0 +1,42 @@
+{
+  "name": "webgl-playground",
+  "version": "1.0.0",
+  "description": "WebGL und GLSL playground",
+  "main": "dist/index",
+  "typings": "dist/index",
+  "scripts": {
+    "start": "parcel showcase/index.html --open",
+    "lint": "tslint -c tslint.json engine/src/**/*.ts",
+    "clean": "del-cli dist",
+    "prebuild": "npm run clean",
+    "build": "parcel build engine/src/core/index.ts -d dist --no-source-maps",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ova2/webgl-playground.git"
+  },
+  "keywords": [
+    "webgl",
+    "glsl",
+    "playground"
+  ],
+  "author": "Oleg Varaksin <ovaraksin@googlemail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ova2/webgl-playground/issues"
+  },
+  "homepage": "https://github.com/ova2/webgl-playground#readme",
+  "devDependencies": {
+    "@types/node": "~10.0.10",
+    "del-cli": "~1.1.0",
+    "parcel-bundler": "^1.8.1",
+    "tslib": "~1.9.1",
+    "tslint": "~5.10.0",
+    "typescript": "~2.8.3"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts"
+  ]
+}
