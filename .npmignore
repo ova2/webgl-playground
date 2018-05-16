@@ -27,3 +27,4 @@ dist
 tsconfig.json
 tslint.json
 config
+docs
