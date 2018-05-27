@@ -7,7 +7,7 @@ export function createShader(gl: WebGL2RenderingContext, type: number, source: s
         return shader;
     }
 
-    console.log(gl.getShaderInfoLog(shader));  // eslint-disable-line
+    console.log(gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
     return undefined;
 }
@@ -22,15 +22,15 @@ export function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLSha
         return program;
     }
 
-    console.log(gl.getProgramInfoLog(program));  // eslint-disable-line
+    console.log(gl.getProgramInfoLog(program)); // eslint-disable-line
     gl.deleteProgram(program);
     return undefined;
 }
 
 export function resizeCanvasToDisplaySize(canvas: HTMLCanvasElement, multiplier: number) {
     multiplier = multiplier || 1;
-    let width = canvas.clientWidth * multiplier | 0;
-    let height = canvas.clientHeight * multiplier | 0;
+    let width = (canvas.clientWidth * multiplier) | 0;
+    let height = (canvas.clientHeight * multiplier) | 0;
     if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;

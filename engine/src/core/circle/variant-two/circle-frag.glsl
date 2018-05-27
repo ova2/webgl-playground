@@ -8,7 +8,6 @@ void main() {
     vec2 cxy = 2.0 * gl_PointCoord - 1.0;
     float r = dot(cxy, cxy);
     float delta = fwidth(r);
-    float max = 1.0 + delta;
-    float alpha = 1.0 - smoothstep(1.0 - delta, max, r);
+    float alpha = 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r);
     outColor = v_color * alpha;
 }
