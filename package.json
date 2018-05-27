@@ -1,48 +1,45 @@
 {
-  "name": "webgl-playground",
-  "version": "1.0.0",
-  "description": "WebGL und GLSL playground",
-  "main": "dist/index",
-  "typings": "dist/index",
-  "scripts": {
-    "start": "parcel showcase/index.html --open",
-    "clean:dist": "del-cli dist",
-    "clean:docs": "del-cli docs",
-    "lint": "tslint -c tslint.json engine/src/**/*.ts",
-    "predoc": "npm run clean:docs",
-    "doc": "typedoc --out docs --target ES5 --readme none --name \"Doc for WebGL und GLSL playground\"",
-    "prebuild": "npm run clean:dist",
-    "build": "parcel build engine/src/core/index.ts -d dist --no-source-maps",
-    "prepublishOnly": "npm run build"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ova2/webgl-playground.git"
-  },
-  "keywords": [
-    "webgl",
-    "glsl",
-    "playground"
-  ],
-  "author": "Oleg Varaksin <ovaraksin@googlemail.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ova2/webgl-playground/issues"
-  },
-  "homepage": "https://github.com/ova2/webgl-playground#readme",
-  "devDependencies": {
-    "@types/node": "~10.0.10",
-    "@types/webgl2": "~0.0.4",
-    "del-cli": "~1.1.0",
-    "parcel-bundler": "^1.8.1",
-    "parcel-plugin-shader-loader": "^1.0.0",
-    "tslib": "~1.9.1",
-    "tslint": "~5.10.0",
-    "typedoc": "~0.11.1",
-    "typescript": "~2.8.3"
-  },
-  "files": [
-    "dist/index.js",
-    "dist/index.d.ts"
-  ]
+    "name": "webgl-playground",
+    "version": "1.0.0",
+    "description": "WebGL und GLSL playground",
+    "main": "dist/index",
+    "typings": "dist/index",
+    "scripts": {
+        "start": "parcel showcase/index.html --open",
+        "clean:dist": "del-cli dist",
+        "clean:docs": "del-cli docs",
+        "lint": "tslint -c tslint.json engine/src/**/*.ts",
+        "predoc": "npm run clean:docs",
+        "doc": "typedoc --out docs --target ES5 --readme none --name \"Doc for WebGL und GLSL playground\"",
+        "prebuild": "npm run clean:dist",
+        "build": "parcel build engine/src/core/index.ts -d dist --no-source-maps",
+        "prepublishOnly": "npm run build"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ova2/webgl-playground.git"
+    },
+    "keywords": ["webgl", "glsl", "playground"],
+    "author": "Oleg Varaksin <ovaraksin@googlemail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/ova2/webgl-playground/issues"
+    },
+    "homepage": "https://github.com/ova2/webgl-playground#readme",
+    "devDependencies": {
+        "@types/gl-matrix": "~2.4.0",
+        "@types/node": "~10.0.10",
+        "@types/webgl2": "~0.0.4",
+        "del-cli": "~1.1.0",
+        "parcel-bundler": "^1.8.1",
+        "parcel-plugin-shader-loader": "^1.0.0",
+        "tslib": "~1.9.1",
+        "tslint": "~5.10.0",
+        "typedoc": "~0.11.1",
+        "typescript": "~2.8.3"
+    },
+    "dependencies": {
+        "gl-matrix": "~2.4.0"
+    },
+    "files": ["dist/index.js", "dist/index.d.ts"]
 }
