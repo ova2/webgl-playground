@@ -80,10 +80,42 @@ function main() {
 }
 
 function transformToTriangles(points: Point[], lineWidth: number): Point[] {
+    if (points == null || points.length <= 1) {
+        return [];
+    }
+
     let pointsT: Point[] = [];
 
 
+    let straightLines: StraightLine[] = [];
+    let endIndex = -1;
+    while (endIndex + 1 < length) {
+        let straightLine = buildStraightLine(endIndex + 1, points);
+        straightLines.push(straightLine);
+        endIndex = straightLine.end[1];
+    }
+
+
     return pointsT;
+}
+
+function buildStraightLine(idx: number, points: Point[]): StraightLine {
+    let point = points[idx];
+    let start = {x: point.x, y: point.y};
+    let end = findEndPoint(idx, points);
+
+    return {start, end};
+}
+
+function findEndPoint(idx: number, points: Point[]): [Point, number] {
+
+    // TODO
+    return null;
+}
+
+interface StraightLine {
+    start: Point;
+    end: [Point, number]; // end point and index of the end point in the array of original points
 }
 
 main();

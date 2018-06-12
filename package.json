@@ -19,7 +19,11 @@
         "type": "git",
         "url": "git+https://github.com/ova2/webgl-playground.git"
     },
-    "keywords": ["webgl", "glsl", "playground"],
+    "keywords": [
+        "webgl",
+        "glsl",
+        "playground"
+    ],
     "author": "Oleg Varaksin <ovaraksin@googlemail.com>",
     "license": "MIT",
     "bugs": {
@@ -41,5 +45,8 @@
     "dependencies": {
         "gl-matrix": "~2.4.0"
     },
-    "files": ["dist/index.js", "dist/index.d.ts"]
+    "files": [
+        "dist/index.js",
+        "dist/index.d.ts"
+    ]
 }
