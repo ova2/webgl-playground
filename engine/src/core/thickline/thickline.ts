@@ -80,7 +80,9 @@ function main() {
 }
 
 function transformToTriangles(points: Point[], lineWidth: number): Point[] {
-    if (points == null || points.length <= 1) {
+    let length = points != null ? points.length : -1;
+    // we expect at least two points
+    if (length <= 1) {
         return [];
     }
 
@@ -88,9 +90,9 @@ function transformToTriangles(points: Point[], lineWidth: number): Point[] {
 
 
     let straightLines: StraightLine[] = [];
-    let endIndex = -1;
-    while (endIndex + 1 < length) {
-        let straightLine = buildStraightLine(endIndex + 1, points);
+    let endIndex = 0;
+    while (endIndex < length - 1) {
+        let straightLine = buildStraightLine(endIndex, points);
         straightLines.push(straightLine);
         endIndex = straightLine.end[1];
     }
@@ -102,15 +104,24 @@ function transformToTriangles(points: Point[], lineWidth: number): Point[] {
 function buildStraightLine(idx: number, points: Point[]): StraightLine {
     let point = points[idx];
     let start = {x: point.x, y: point.y};
-    let end = findEndPoint(idx, points);
+    let end = findEndPoint(idx + 1, points);
 
     return {start, end};
 }
 
 function findEndPoint(idx: number, points: Point[]): [Point, number] {
+    let end = points[idx];
+    let next: Point = null;
+    if (idx < points.length - 1) {
+        let next = points[idx + 1];
+    }
 
-    // TODO
-    return null;
+    if (next && end.x == next.x || end.y == next.y) {
+        // next and current points are located on a straight line => search on the end point
+        return findEndPoint(idx + 1, points);
+    }
+
+    return [end, idx];
 }
 
 interface StraightLine {
