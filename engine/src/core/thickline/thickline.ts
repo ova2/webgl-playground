@@ -28,7 +28,7 @@ function main() {
         {x: -379.12, y: 11.6}
     ];
 
-    const lineWidth = 5;
+    const lineWidth = 15;
 
     // calculate points of triangles that draw a thick line
     let tPoints = transformToTrianglePoints(points, lineWidth);
@@ -37,9 +37,6 @@ function main() {
     tPoints.forEach((tPoint, index) => {
         data.set([tPoint.x, tPoint.y], index * 2);
     });
-
-    console.log(2 * length);
-    console.log(data);
 
     let dataBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, dataBuffer);
@@ -149,53 +146,29 @@ function isLinesParallel(firstStartPoint: Point, firstEndPoint: Point, secondSta
 }
 
 function findTrianglePoints(straightLine: StraightLine, lineWidth: number): Point[] {
-    // get orthogonal normalized vectors at both line points (start and end)
-    let [vecStart, vecEnd] = getNormalizedOrthogonalVector(straightLine);
+    const vecStart = vec2.fromValues(straightLine.start.x, straightLine.start.y);
+    const vecEnd = vec2.fromValues(straightLine.end.x, straightLine.end.y);
+    const line = vec2.create();
+    vec2.subtract(line, vecEnd, vecStart);
+    const normal = vec2.create();
+    vec2.normalize(normal, vec2.fromValues(-line[1], line[0]));
+    const adjustedNormal = vec2.fromValues(lineWidth * normal[0], lineWidth * normal[1]);
 
-    // calculate points for triangles (scale and translate vectors back to the original poisitons)
-    const distance1 = vecStart[0] * lineWidth;
-    const distance2 = vecStart[1] * lineWidth;
-    const distance3 = vecEnd[0] * lineWidth;
-    const distance4 = vecEnd[1] * lineWidth;
+    const vecA = vec2.create();
+    vec2.subtract(vecA, vecStart, adjustedNormal);
+    const vecB = vec2.create();
+    vec2.add(vecB, vecStart, adjustedNormal);
+    const vecC = vec2.create();
+    vec2.subtract(vecC, vecEnd, adjustedNormal);
+    const vecD = vec2.create();
+    vec2.add(vecD, vecEnd, adjustedNormal);
 
-    let t1: Point = {x: distance1 + straightLine.start.x, y: distance2 + straightLine.start.y};
-    let t2: Point = {x: -distance1 * lineWidth + straightLine.start.x, y: -distance2 + straightLine.start.y};
-    let t3: Point = {x: distance3 + straightLine.end.x, y: distance4 + straightLine.end.y};
-    let t4: Point = {x: -distance3 + straightLine.end.x, y: -distance4 + straightLine.end.y};
+    const t1 = {x: vecA[0], y: vecA[1]};
+    const t2 = {x: vecB[0], y: vecB[1]};
+    const t3 = {x: vecC[0], y: vecC[1]};
+    const t4 = {x: vecD[0], y: vecD[1]};
 
     return [t1, t2, t3, t2, t3, t4];
-}
-
-function getNormalizedOrthogonalVector(straightLine: StraightLine): [vec2, vec2] {
-    let outStart: vec2;
-    let outEnd: vec2;
-
-    if (straightLine.start.x == straightLine.end.x) {
-        outStart = outEnd = vec2.fromValues(0, 1);
-        return [outStart, outEnd];
-    }
-
-    if (straightLine.start.y == straightLine.end.y) {
-        outStart = outEnd = vec2.fromValues(1, 0);
-        return [outStart, outEnd];
-    }
-
-    let spoint: Point = {
-        x: straightLine.start.x - straightLine.end.x,
-        y: straightLine.start.y - straightLine.end.y
-    };
-
-    let epoint: Point = {
-        x: straightLine.end.x - straightLine.start.x,
-        y: straightLine.end.y - straightLine.start.y
-    };
-
-    outStart = vec2.create();
-    outEnd = vec2.create();
-    vec2.normalize(outStart, vec2.fromValues(1, -epoint.x / epoint.y));
-    vec2.normalize(outEnd, vec2.fromValues(1, -spoint.x / spoint.y));
-
-    return [outStart, outEnd];
 }
 
 interface StraightLine {
