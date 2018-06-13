@@ -22,8 +22,9 @@ function main() {
         {x: -360.88, y: -222},
         {x: -244.5, y: 0},
         {x: 17.99, y: 0},
-        {x: 98, y: -197.34},
-        {x: 98, y: 22.9},
+        {x: 61.99, y: 0},
+        {x: 188, y: -197.34},
+        {x: 188, y: 22.9},
         {x: -189, y: 212},
         {x: -379.12, y: 11.6}
     ];
@@ -65,7 +66,7 @@ function main() {
     mat3.projection(projectionMatrix, gl.canvas.width, gl.canvas.height);
 
     gl.uniformMatrix3fv(projectionMatrixLocation, false, projectionMatrix);
-    gl.uniform4fv(colorLocation, [40 / 255, 187 / 255, 63 / 255, 1.0]);
+    gl.uniform4fv(colorLocation, [40 / 255, 187 / 255, 63 / 255, 0.5]);
 
     gl.clearColor(0, 20 / 255, 25 / 255, 1.0);
     //gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -75,7 +76,7 @@ function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // draw
-    gl.drawArrays(gl.TRIANGLES, 0, length);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, length);
 }
 
 function transformToTrianglePoints(points: Point[], lineWidth: number): Point[] {
@@ -90,7 +91,6 @@ function transformToTrianglePoints(points: Point[], lineWidth: number): Point[] 
     let endIndex = 0;
     while (endIndex < length - 1) {
         let {start, end, endPointIndex} = buildStraightLine(endIndex, points);
-        console.log(`${start.x}, ${start.y}, ${end.x}, ${end.y}, ${endPointIndex}`);
         straightLines.push({start, end});
         endIndex = endPointIndex;
     }
@@ -130,8 +130,7 @@ function findEndPointIndex(start: Point, idx: number, points: Point[]): number {
 
 function isLinesParallel(firstStartPoint: Point, firstEndPoint: Point, secondStartPoint: Point, secondEndPoint: Point): boolean {
     // calculate and compare slopes
-    let slope1 = 0;
-    let slope2 = 0;
+    let slope1, slope2 = 0;
     if (firstStartPoint.x != firstEndPoint.x) {
         slope1 = (firstEndPoint.y - firstStartPoint.y) / (firstEndPoint.x - firstStartPoint.x);
     }
@@ -139,8 +138,6 @@ function isLinesParallel(firstStartPoint: Point, firstEndPoint: Point, secondSta
     if (secondStartPoint.x != secondEndPoint.x) {
         slope2 = (secondEndPoint.y - secondStartPoint.y) / (secondEndPoint.x - secondStartPoint.x);
     }
-
-    //console.log(`slope1 = ${slope1}, slope2 = ${slope2}`);
 
     return Math.abs(slope1 - slope2) < 0.00000001;
 }
@@ -152,23 +149,23 @@ function findTrianglePoints(straightLine: StraightLine, lineWidth: number): Poin
     vec2.subtract(line, vecEnd, vecStart);
     const normal = vec2.create();
     vec2.normalize(normal, vec2.fromValues(-line[1], line[0]));
-    const adjustedNormal = vec2.fromValues(lineWidth * normal[0], lineWidth * normal[1]);
+    const resizedNormal = vec2.fromValues(lineWidth * normal[0], lineWidth * normal[1]);
 
     const vecA = vec2.create();
-    vec2.subtract(vecA, vecStart, adjustedNormal);
+    vec2.subtract(vecA, vecStart, resizedNormal);
     const vecB = vec2.create();
-    vec2.add(vecB, vecStart, adjustedNormal);
+    vec2.add(vecB, vecStart, resizedNormal);
     const vecC = vec2.create();
-    vec2.subtract(vecC, vecEnd, adjustedNormal);
+    vec2.subtract(vecC, vecEnd, resizedNormal);
     const vecD = vec2.create();
-    vec2.add(vecD, vecEnd, adjustedNormal);
+    vec2.add(vecD, vecEnd, resizedNormal);
 
     const t1 = {x: vecA[0], y: vecA[1]};
     const t2 = {x: vecB[0], y: vecB[1]};
     const t3 = {x: vecC[0], y: vecC[1]};
     const t4 = {x: vecD[0], y: vecD[1]};
 
-    return [t1, t2, t3, t2, t3, t4];
+    return [t1, t2, t3, t4];
 }
 
 interface StraightLine {
