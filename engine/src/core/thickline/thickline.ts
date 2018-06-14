@@ -29,7 +29,7 @@ function main() {
         {x: -379.12, y: 11.6}
     ];
 
-    const lineWidth = 15;
+    const lineWidth = 60;
 
     // calculate points of triangles that draw a thick line
     let tPoints = transformToTrianglePoints(points, lineWidth);
@@ -149,7 +149,8 @@ function findTrianglePoints(straightLine: StraightLine, lineWidth: number): Poin
     vec2.subtract(line, vecEnd, vecStart);
     const normal = vec2.create();
     vec2.normalize(normal, vec2.fromValues(-line[1], line[0]));
-    const resizedNormal = vec2.fromValues(lineWidth * normal[0], lineWidth * normal[1]);
+    const halfLineWidth = lineWidth / 2;
+    const resizedNormal = vec2.fromValues(halfLineWidth * normal[0], halfLineWidth * normal[1]);
 
     const vecA = vec2.create();
     vec2.subtract(vecA, vecStart, resizedNormal);
