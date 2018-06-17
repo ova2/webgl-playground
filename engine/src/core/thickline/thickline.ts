@@ -3,6 +3,8 @@ import fragmentShaderSource from './thickline-frag.glsl';
 import {createProgram, createShader, resizeCanvasToDisplaySize} from '../webgl-program-service';
 import {mat3, vec2} from 'gl-matrix';
 import {Point} from '../point';
+import {Quad, StraightLine, ThickLineElement, Triangle} from './thickline.model';
+import {intersect} from './math.util';
 
 function main() {
     let canvas = document.getElementById('glscreen') as HTMLCanvasElement;
@@ -18,7 +20,7 @@ function main() {
 
     // points of line
     // prettier-ignore
-    let points: Point[] = [
+    let linePoints: Point[] = [
         {x: -360.88, y: -222},
         {x: -244.5, y: 0},
         {x: 17.99, y: 0},
@@ -31,12 +33,11 @@ function main() {
 
     const lineWidth = 60;
 
-    // calculate points of triangles that draw a thick line
-    let tPoints = transformToTrianglePoints(points, lineWidth);
-    const length = tPoints.length;
+    let points = createGeometry(linePoints, lineWidth);
+    const length = points.length;
     let data = new Float32Array(2 * length);
-    tPoints.forEach((tPoint, index) => {
-        data.set([tPoint.x, tPoint.y], index * 2);
+    points.forEach((point, index) => {
+        data.set([point.x, point.y], index * 2);
     });
 
     let dataBuffer = gl.createBuffer();
@@ -76,10 +77,10 @@ function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // draw
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, length);
+    gl.drawArrays(gl.TRIANGLES, 0, length);
 }
 
-function transformToTrianglePoints(points: Point[], lineWidth: number): Point[] {
+function createGeometry(points: Point[], lineWidth: number): Point[] {
     let length = points != null ? points.length : -1;
     // we expect at least two points
     if (length <= 1) {
@@ -95,73 +96,28 @@ function transformToTrianglePoints(points: Point[], lineWidth: number): Point[] 
         endIndex = endPointIndex;
     }
 
-    // build array of thick straight lines
-    let tlBounds: Quad[] = [];
+    // build array of rectangles (quads) along the straight lines
+    let quads: Quad[] = [];
     for (let sl of straightLines) {
-        tlBounds.push(findThickLineBounds(sl, lineWidth));
+        quads.push(buildQuads(sl, lineWidth));
     }
 
-    let tPoints: TrianglePoints[] = [];
-
-    const tlLength = tlBounds.length;
-    for (let i = 0; i < tlLength; i++) {
-        let bound = tlBounds[i];
-        let nextBound = null;
-        if (i + 1 < tlLength) {
-            nextBound = tlBounds[i + 1];
+    // build thick line model => adjust quads and connect them with triangles
+    let model: (Quad | Triangle)[] = [];
+    const quadsLength = quads.length;
+    for (let i = 0; i < quadsLength; i++) {
+        let quad = quads[i];
+        if (i + 1 == quadsLength) {
+            model.push(quad);
+            break;
         }
 
-        if (nextBound != null) {
-            const intersectPoint: vec2 = vec2.create();
-            let intersectPointAtBottom = true;
-            if (!intersect(
-                intersectPoint,
-                {x: bound.startBottom[0], y: bound.startBottom[1]},
-                {x: bound.endBottom[0], y: bound.endBottom[1]},
-                {x: nextBound.startBottom[0], y: nextBound.startBottom[1]},
-                {x: nextBound.endBottom[0], y: nextBound.endBottom[1]}
-            )) {
-                // we didn't found an intersection point => go to the top bound lines and try again
-                intersectPointAtBottom = false;
-                if (!intersect(
-                    intersectPoint,
-                    {x: bound.startTop[0], y: bound.startTop[1]},
-                    {x: bound.endTop[0], y: bound.endTop[1]},
-                    {x: nextBound.startTop[0], y: nextBound.startTop[1]},
-                    {x: nextBound.endTop[0], y: nextBound.endTop[1]}
-                )) {
-                    console.warn(`Intersection point of lines ${JSON.stringify(bound)} and ${JSON.stringify(nextBound)} could not be found`);
-                }
-            }
-
-            if (intersectPointAtBottom) {
-                tPoints.push([
-                    {x: bound.startTop[0], y: bound.startTop[1]},
-                    {x: bound.startBottom[0], y: bound.startBottom[1]},
-                    {x: bound.endTop[0], y: bound.endTop[1]}
-                ], [
-                    {x: bound.startBottom[0], y: bound.startBottom[1]},
-                    {x: bound.endTop[0], y: bound.endTop[1]},
-                    {x: intersectPoint[0], y: intersectPoint[1]}
-                ]);
-            } else {
-                tPoints.push([
-                    {x: bound.startBottom[0], y: bound.startBottom[1]},
-                    {x: bound.startTop[0], y: bound.startTop[1]},
-                    {x: bound.endBottom[0], y: bound.endBottom[1]}
-                ], [
-                    {x: bound.startTop[0], y: bound.startTop[1]},
-                    {x: bound.endBottom[0], y: bound.endBottom[1]},
-                    {x: intersectPoint[0], y: intersectPoint[1]}
-                ]);
-            }
-
-        }
+        let nextQuad = quads[i + 1];
+        constructThickLineModel(model, quad, nextQuad);
     }
 
-    // TODO
-
-    return tPoints;
+    // build array of points to draw with TRIANGLES
+    return transformToTrianglePoints(model);
 }
 
 function buildStraightLine(idx: number, points: Point[]): StraightLine & { endPointIndex: number } {
@@ -204,7 +160,7 @@ function isLinesParallel(firstStartPoint: Point, firstEndPoint: Point, secondSta
     return Math.abs(slope1 - slope2) < 0.00000001;
 }
 
-function findThickLineBounds(straightLine: StraightLine, lineWidth: number): Quad {
+function buildQuads(straightLine: StraightLine, lineWidth: number): Quad {
     const vecStart = vec2.fromValues(straightLine.start.x, straightLine.start.y);
     const vecEnd = vec2.fromValues(straightLine.end.x, straightLine.end.y);
     const line = vec2.create();
@@ -223,80 +179,57 @@ function findThickLineBounds(straightLine: StraightLine, lineWidth: number): Qua
     const vecD = vec2.create();
     vec2.add(vecD, vecEnd, resizedNormal);
 
-    /**
-     const t1 = {x: vecA[0], y: vecA[1]};
-     const t2 = {x: vecB[0], y: vecB[1]};
-     const t3 = {x: vecC[0], y: vecC[1]};
-     const t4 = {x: vecD[0], y: vecD[1]};
-     */
-
-    return {startBottom: vecA, startTop: vecB, endBottom: vecC, endTop: vecD};
+    return new Quad(
+        {start: {x: vecB[0], y: vecB[1]}, end: {x: vecD[0], y: vecD[1]}},
+        {start: {x: vecA[0], y: vecA[1]}, end: {x: vecC[0], y: vecC[1]}}
+    );
 }
 
-// http://schteppe.github.io/p2.js/docs/files/src_math_vec2.js.html
+function constructThickLineModel(model: (Quad | Triangle)[], quad: Quad, nextQuad: Quad): void {
+    let intersectPoint = intersect(
+        {x: quad.bottom.start.x, y: quad.bottom.start.y},
+        {x: quad.bottom.end.x, y: quad.bottom.end.y},
+        {x: nextQuad.bottom.start.x, y: nextQuad.bottom.start.y},
+        {x: nextQuad.bottom.end.x, y: nextQuad.bottom.end.y}
+    );
 
-/**
- * Get the intersection point between two line segments.
- * @static
- * @method getLineSegmentsIntersection
- * @param  {Array} out
- * @param  {Array} p0
- * @param  {Array} p1
- * @param  {Array} p2
- * @param  {Array} p3
- * @return {boolean} True if there was an intersection, otherwise false.
- */
-function intersect(out: vec2, p0: Point, p1: Point, p2: Point, p3: Point) {
-    let t = getLineSegmentsIntersectionFraction(p0, p1, p2, p3);
-    if (t < 0) {
-        return false;
-    } else {
-        out[0] = p0.x + (t * (p1.x - p0.x));
-        out[1] = p0.y + (t * (p1.y - p0.y));
-        return true;
-    }
-}
-
-/**
- * Get the intersection fraction between two line segments. If successful, the intersection is at p0 + t * (p1 - p0)
- * @static
- * @method getLineSegmentsIntersectionFraction
- * @param  {Array} p0
- * @param  {Array} p1
- * @param  {Array} p2
- * @param  {Array} p3
- * @return {number} A number between 0 and 1 if there was an intersection, otherwise -1.
- */
-function getLineSegmentsIntersectionFraction(p0: Point, p1: Point, p2: Point, p3: Point) {
-    let s1_x = p1.x - p0.x;
-    let s1_y = p1.y - p0.y;
-    let s2_x = p3.x - p2.x;
-    let s2_y = p3.y - p2.y;
-
-    let s, t;
-    const l = -s2_x * s1_y + s1_x * s2_y;
-    s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / l;
-    t = (s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / l;
-    if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-        // Collision detected (intersection point available)
-        return t;
+    if (intersectPoint) {
+        // intersection point at bottom line
+        quad.bottom.end = intersectPoint;
+        nextQuad.bottom.start = intersectPoint;
+        let triangleBase = {start: quad.top.end, end: nextQuad.top.start};
+        let triangle = new Triangle(intersectPoint, triangleBase);
+        model.push(quad, triangle);
+        return;
     }
 
-    return -1; // No collision
+    intersectPoint = intersect(
+        {x: quad.top.start.x, y: quad.top.start.y},
+        {x: quad.top.end.x, y: quad.top.end.y},
+        {x: nextQuad.top.start.x, y: nextQuad.top.start.y},
+        {x: nextQuad.top.end.x, y: nextQuad.top.end.y}
+    );
+
+    if (intersectPoint) {
+        // intersection point at top line
+        quad.top.end = intersectPoint;
+        nextQuad.top.start = intersectPoint;
+        let triangleBase = {start: quad.bottom.end, end: nextQuad.bottom.start};
+        let triangle = new Triangle(intersectPoint, triangleBase);
+        model.push(quad, triangle);
+        return;
+    }
+
+    console.warn(`Intersection point of quads ${JSON.stringify(quad)} and ${JSON.stringify(nextQuad)} could not be found`);
 }
 
-interface StraightLine {
-    start: Point;
-    end: Point;
-}
+function transformToTrianglePoints(model: (Quad | Triangle)[]): Point[] {
+    let points: Point[] = [];
+    for (let element of model) {
+        points.push(...element.getPoints());
+    }
 
-interface Quad {
-    startBottom: vec2;
-    startTop: vec2;
-    endBottom: vec2;
-    endTop: vec2;
+    return points;
 }
-
-type TrianglePoints = [Point, Point, Point];
 
 main();
