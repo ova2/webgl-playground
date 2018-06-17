@@ -1,8 +1,36 @@
 import {Point} from '../point';
 
+export const EPSILON = (Number.EPSILON === undefined) ? Math.pow(2, -52) : Number.EPSILON;
+
 /**
- * Get the intersection point between two line segments.
+ * Checks if two line segments are parallel.
+ *
+ * @param {Point} firstStartPoint
+ * @param {Point} firstEndPoint
+ * @param {Point} secondStartPoint
+ * @param {Point} secondEndPoint
+ * @returns {boolean} true - parallel, false - otherwise
+ */
+export function isLinesParallel(firstStartPoint: Point, firstEndPoint: Point, secondStartPoint: Point, secondEndPoint: Point): boolean {
+    if (firstStartPoint.x == firstEndPoint.x || secondStartPoint.x == secondEndPoint.x) {
+        return firstStartPoint.x == firstEndPoint.x && secondStartPoint.x == secondEndPoint.x;
+    }
+
+    if (firstStartPoint.y == firstEndPoint.y || secondStartPoint.y == secondEndPoint.y) {
+        return firstStartPoint.y == firstEndPoint.y && secondStartPoint.y == secondEndPoint.y;
+    }
+
+    // calculate and compare slopes
+    let slope1 = (firstEndPoint.y - firstStartPoint.y) / (firstEndPoint.x - firstStartPoint.x);
+    let slope2 = (secondEndPoint.y - secondStartPoint.y) / (secondEndPoint.x - secondStartPoint.x);
+
+    return Math.abs(slope1 - slope2) < EPSILON;
+}
+
+/**
+ * Gets the intersection point between two line segments.
  * http://schteppe.github.io/p2.js/docs/files/src_math_vec2.js.html
+ *
  * @param  {Array} p0 start point of the first line
  * @param  {Array} p1 end point of the first line
  * @param  {Array} p2 start point of the second line
@@ -19,7 +47,8 @@ export function intersect(p0: Point, p1: Point, p2: Point, p3: Point): Point {
 }
 
 /**
- * Get the intersection fraction between two line segments. If successful, the intersection is at p0 + t * (p1 - p0)
+ * Gets the intersection fraction between two line segments. If successful, the intersection is at p0 + t * (p1 - p0)
+ *
  * @param  {Array} p0 start point of the first line
  * @param  {Array} p1 end point of the first line
  * @param  {Array} p2 start point of the second line

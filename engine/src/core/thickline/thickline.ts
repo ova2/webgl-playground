@@ -4,7 +4,7 @@ import {createProgram, createShader, resizeCanvasToDisplaySize} from '../webgl-p
 import {mat3, vec2} from 'gl-matrix';
 import {Point} from '../point';
 import {Quad, StraightLine, ThickLineElement, Triangle} from './thickline.model';
-import {intersect} from './math.util';
+import {EPSILON, intersect, isLinesParallel} from './math.util';
 
 function main() {
     let canvas = document.getElementById('glscreen') as HTMLCanvasElement;
@@ -26,12 +26,13 @@ function main() {
         {x: 17.99, y: 0},
         {x: 61.99, y: 0},
         {x: 188, y: -197.34},
-        {x: 188, y: 22.9},
+        {x: 188, y: 32.9},
+        {x: 371, y: 32.9},
         {x: -189, y: 212},
         {x: -379.12, y: 11.6}
     ];
 
-    const lineWidth = 60;
+    const lineWidth = 50;
 
     let points = createGeometry(linePoints, lineWidth);
     const length = points.length;
@@ -145,21 +146,6 @@ function findEndPointIndex(start: Point, idx: number, points: Point[]): number {
     return idx;
 }
 
-function isLinesParallel(firstStartPoint: Point, firstEndPoint: Point, secondStartPoint: Point, secondEndPoint: Point): boolean {
-    // calculate and compare slopes
-    // TODO: doesn't work if two lines are orthogonal
-    let slope1, slope2 = 0;
-    if (firstStartPoint.x != firstEndPoint.x) {
-        slope1 = (firstEndPoint.y - firstStartPoint.y) / (firstEndPoint.x - firstStartPoint.x);
-    }
-
-    if (secondStartPoint.x != secondEndPoint.x) {
-        slope2 = (secondEndPoint.y - secondStartPoint.y) / (secondEndPoint.x - secondStartPoint.x);
-    }
-
-    return Math.abs(slope1 - slope2) < 0.00000001;
-}
-
 function buildQuads(straightLine: StraightLine, lineWidth: number): Quad {
     const vecStart = vec2.fromValues(straightLine.start.x, straightLine.start.y);
     const vecEnd = vec2.fromValues(straightLine.end.x, straightLine.end.y);
@@ -220,7 +206,8 @@ function constructThickLineModel(model: (Quad | Triangle)[], quad: Quad, nextQua
         return;
     }
 
-    console.warn(`Intersection point of quads ${JSON.stringify(quad)} and ${JSON.stringify(nextQuad)} could not be found`);
+    console.warn(`Intersection point of quads ${JSON.stringify(quad)} and ${JSON.stringify(nextQuad)} could not be found.
+    The lineWidth is probably too big or an angle between lines is too acute.`);
 }
 
 function transformToTrianglePoints(model: (Quad | Triangle)[]): Point[] {
